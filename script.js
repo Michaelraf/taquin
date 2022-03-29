@@ -1,24 +1,55 @@
+/**
+ * @author RAFALIMANANA Michaël
+ */
 const len = 4;
 let table = document.querySelector('.table');
-
-init = function(){
-    for (let i=0; i<len; i++){
-        let row = document.createElement('div');
-        row.classList.add("row");
-        table.appendChild(row);
-    }
-    window.rows = document.querySelectorAll('.row');
-}
+table.style.width = 100*len + 20 +"px";
+table.style.height = 100*len + 20 + "px";
+table_rect = table.getBoundingClientRect();
 
 class Piece {
-    constructor(number) {
+    constructor(number, posX, posY) {
         this.number = number;
+        this.posX = posX;
+        this.posY = posY;
         this.elt = document.createElement('div');
         this.elt.classList.add('piece');
+        if(this.number == "")
+            this.elt.classList.add("empty");
         this.elt.innerHTML = this.number;
     }
+    set setNumber(number){
+        this.number = number;
+    }
+    set setPosX(X){
+        this.posX = X;
+    }
+    set setPosY(Y){
+        this.posY = Y;
+    }
+
     get getNumber(){
         return this.number;
+    }
+    get getElt(){
+        return this.elt;
+    }
+    get getPos(){
+        return {"x" : this.posX, "y": this.posY};
+    }
+
+    put(){
+        this.elt.style.top = table_rect.top + this.posX*100 + 10 + "px";
+        this.elt.style.left = table_rect.left + this.posY*100 + 10 + "px";
+        this.changeBackgroundColor();
+    }
+    changeBackgroundColor(){
+        if(this.number!="" & Math.ceil(this.number/len)%2 == 0){
+            this.elt.style.backgroundColor = "#6a789f"
+        }
+        else if(this.number!="" & Math.ceil(this.number/len)%2 != 0){
+            this.elt.style.backgroundColor = "rgb(67, 47, 206)";
+        }
     }
 }
 class Grid {
@@ -30,143 +61,214 @@ class Grid {
             this.pieces[i] = [];
             for (let j = 0; j < len; j++) {
                 if (i == len - 1 & j == len - 1)
-                    this.pieces[i][j] = new Piece('');
+                    this.pieces[i][j] = new Piece('', i,j);
                 else {
-                    this.pieces[i][j] = new Piece(number);
+                    this.pieces[i][j] = new Piece(number, i, j);
                     number++;
                 }
-                this.pieces[i][j].elt.addEventListener('click', (e)=>{
-                    this.moveByClick(e, i, j);
-                });
             }
         }
     }
     get getPieces(){
         return this.pieces;
     }
-    shuffle(){
-        
-    }
-    moveByClick(e, i, j){
-        if(e.target.textContent != ""){
+    moveByClick(number){
+
+        // Find the position of the element having the specified number
+        let x = null;
+        let y = null;
+        ext:
+        for (let i=0; i<len; i++){
+            for(let j=0; j<len; j++){
+                if(this.pieces[i][j].getNumber == number){
+                    x = i;
+                    y = j;
+                    break ext;
+                }
+            }
+        }
+        if(this.pieces[x][y].getNumber != ""){
             // verifier si le vide est en haut
-            if (this.checkRange(i-1, j)){
-                if (this.pieces[i-1][j].getNumber == ""){
-                    this.permute(this.pieces[i][j].getNumber, this.pieces[i-1][j].getNumber)
+            if (this.checkRange(x-1, y)){
+                if (this.pieces[x-1][y].getNumber == ""){
+                    this.permute(this.pieces[x][y], this.pieces[x-1][y])
                 }
             }
             // verifier si le vide est en bas
-            if (this.checkRange(i+1, j)){
-                if (this.pieces[i+1][j].getNumber == ""){
-                    this.permute(this.pieces[i][j].getNumber, this.pieces[i+1][j].getNumber)
+            if (this.checkRange(x+1, y)){
+                if (this.pieces[x+1][y].getNumber == ""){
+                    this.permute(this.pieces[x][y], this.pieces[x+1][y])
                 }
             }
             // verifier si le vide est à gauche
-            if (this.checkRange(i, j-1)){
-                if (this.pieces[i][j-1].getNumber == ""){
-                    this.permute(this.pieces[i][j].getNumber, this.pieces[i][j-1].getNumber)
+            if (this.checkRange(x, y-1)){
+                if (this.pieces[x][y-1].getNumber == ""){
+                    this.permute(this.pieces[x][y], this.pieces[x][y-1])
                 }
             }
             // verifier si le vide est à droite
-            if (this.checkRange(i, j+1)){
-                if (this.pieces[i][j+1].getNumber == ""){
-                    this.permute(this.pieces[i][j].getNumber, this.pieces[i][j+1].getNumber)
+            if (this.checkRange(x, y+1)){
+                if (this.pieces[x][y+1].getNumber == ""){
+                    this.permute(this.pieces[x][y], this.pieces[x][y+1])
                 }
-            }                        
-
+            }
         }
     }
     init(){
         for (let i = 0; i < len; i++) {
             for (let j = 0; j < len; j++) {
-                rows[i].appendChild(this.pieces[i][j].elt);
-                this.changeBackgroundColor(rows[i].children.item(j));
+                this.pieces[i][j].put();
+                table.appendChild(this.pieces[i][j].getElt)
             }
         }
     }
-    permute(num1, num2){
-        // Find the pieces with the specified numbers
-        let ind1 = {};
-        let ind2 = {};
-        for (let i=0; i<len; i++){
-            for (let j=0; j<len; j++){
-                if (this.pieces[i][j].getNumber == num1){
-                    ind1["x"] = i;
-                    ind1["y"] = j;
-                }
-                else if(this.pieces[i][j].getNumber == num2){
-                    ind2["x"] = i;
-                    ind2["y"] = j;
-                }
-            }
-        }
+    permute(piece1, piece2){
 
-        // Permute num1 and num2
-        [this.pieces[ind1["x"]][ind1["y"]], this.pieces[ind2["x"]][ind2["y"]]] = [this.pieces[ind2["x"]][ind2["y"]], this.pieces[ind1["x"]][ind1["y"]]]
-        rows[ind1["x"]].children.item(ind1["y"]).textContent = num2;
-        rows[ind2["x"]].children.item(ind2["y"]).textContent = num1;
-        this.changeBackgroundColor(rows[ind1["x"]].children.item(ind1["y"]))
-        this.changeBackgroundColor(rows[ind2["x"]].children.item(ind2["y"]))
+        // Permute elt1 and elt2
+
+        let x1 = piece1.getPos.x;
+        let x2 = piece2.getPos.x;
+        let y1 = piece1.getPos.y;
+        let y2 = piece2.getPos.y;
+
+        this.pieces[x1][y1] = piece2;
+        this.pieces[x2][y2] = piece1;
+        this.pieces[x1][y1].setPosX = x1;
+        this.pieces[x1][y1].setPosY = y1;
+        this.pieces[x2][y2].setPosX = x2;
+        this.pieces[x2][y2].setPosY = y2;
+
+        this.pieces[x1][y1].put();
+        this.pieces[x2][y2].put();
     }
     checkRange(i, j){
         if(i<0 || j<0 || i >= len || j >= len)
             return false;
         return true;
     }
-    changeBackgroundColor(node){
-        if(node.textContent!="" & Math.ceil(node.textContent/len)%2 == 0){
-            node.style.backgroundColor = "#6a789f"
+    move(direction){
+        let ind = {};
+        let ind1 = {};
+        for (let i=0; i<len; i++){
+            for (let j=0; j<len; j++){
+                if (this.pieces[i][j].getNumber == ""){
+                    ind["x"] = i;
+                    ind["y"] = j;
+                }
+            }
         }
-        else if(node.textContent!="" & Math.ceil(node.textContent/len)%2 != 0){
-            node.style.backgroundColor = "rgb(67, 47, 206)";
+        if(direction == 'U'){
+            ind1["x"] = ind.x+1;
+            ind1["y"] = ind.y;
+            if(this.checkRange(ind1.x, ind1.y)){
+                this.permute(this.pieces[ind.x][ind.y],this.pieces[ind1.x][ind1.y]);
+            }
+            else{
+                return false;
+            }
         }
-        else{
-            node.style.backgroundColor = "#c8c5c5";
+        else if(direction == 'D'){
+            ind1["x"] = ind.x-1;
+            ind1["y"] = ind.y;
+            if(this.checkRange(ind1.x, ind1.y)){
+                this.permute(this.pieces[ind.x][ind.y],this.pieces[ind1.x][ind1.y]);
+            }
+            else{
+                return false;
+            }
         }
+        else if(direction == 'R'){
+            ind1["x"] = ind.x;
+            ind1["y"] = ind.y-1;
+            if(this.checkRange(ind1.x, ind1.y)){
+                this.permute(this.pieces[ind.x][ind.y],this.pieces[ind1.x][ind1.y]);
+            }
+            else{
+                return false;
+            }
+        }
+        else if(direction == 'L'){
+            ind1["x"] = ind.x;
+            ind1["y"] = ind.y+1;
+            if(this.checkRange(ind1.x, ind1.y)){
+                this.permute(this.pieces[ind.x][ind.y],this.pieces[ind1.x][ind1.y]);
+            }
+            else{
+                return false;
+            }
+        }
+        return true;
+    }
+    shuffle(iterations){
+        let i = 0;
+        let lastMove = '';
+        let id = window.setInterval(()=>{
+            let moves = ['U','D','R','L']; // List of moves
+            if(i>0){
+                // Suppression immédiat de l'inverse du dérnier coup
+                let index = moves.indexOf(this.getInverse(lastMove));
+                moves.splice(index, 1);
+            }
+            let move = moves[Math.ceil(Math.random()*moves.length-1)];
+            while (!this.move(move)){
+                // Remove the impossible move from the list
+                let index = moves.indexOf(move);
+                moves.splice(index, 1);
+                move = moves[Math.ceil(Math.random()*moves.length-1)];
+            }
+            lastMove = move;
+            i++;
+            if(i >= iterations){
+                window.clearInterval(id);
+            }
+            
+        }, 150);
+    }
+    getInverse(move){
+        if (move == 'U')
+            return 'D';
+        else if (move == 'D')
+            return 'U';
+        else if (move == 'R')
+            return 'L';
+        else if (move == 'L')
+            return 'R';
+        else
+            return false;
     }
 }
 
 let grid = new Grid();
-init();
 grid.init();
 
 window.addEventListener("keydown",(e)=>{
-    let ind = {};
-    let ind1 = {}
-    for (let i=0; i<len; i++){
-        for (let j=0; j<len; j++){
-            if (grid.getPieces[i][j].getNumber == ""){
-                ind["x"] = i;
-                ind["y"] = j;
-            }
-        }
-    }
     if(e.key == 'ArrowUp'){
-        ind1["x"] = ind["x"]+1;
-        ind1["y"] = ind["y"];
-        if(grid.checkRange(ind1["x"], ind1["y"])){
-            grid.permute("",grid.getPieces[ind1["x"]][ind1["y"]].getNumber)
-        }
+       grid.move('U');
     }
-    if(e.key == 'ArrowDown'){
-        ind1["x"] = ind["x"]-1;
-        ind1["y"] = ind["y"];
-        if(grid.checkRange(ind1["x"], ind1["y"])){
-            grid.permute("",grid.getPieces[ind1["x"]][ind1["y"]].getNumber)
-        }
+    else if(e.key == 'ArrowDown'){
+        grid.move('D');
+
     }
-    if(e.key == 'ArrowRight'){
-        ind1["x"] = ind["x"];
-        ind1["y"] = ind["y"]-1;
-        if(grid.checkRange(ind1["x"], ind1["y"])){
-            grid.permute("",grid.getPieces[ind1["x"]][ind1["y"]].getNumber)
-        }
+    else if(e.key == 'ArrowRight'){
+        grid.move('R');
     }
-    if(e.key == 'ArrowLeft'){
-        ind1["x"] = ind["x"];
-        ind1["y"] = ind["y"]+1;
-        if(grid.checkRange(ind1["x"], ind1["y"])){
-            grid.permute("",grid.getPieces[ind1["x"]][ind1["y"]].getNumber)
-        }
+    else if(e.key == 'ArrowLeft'){
+        grid.move('L');
+    }
+    else if (e.key == 's' || e.key == 'S'){
+        grid.shuffle(100);
     }
 })
+window.addEventListener('click', (e)=>{
+    if (e.target.classList.contains("piece")){
+        grid.moveByClick(e.target.textContent);
+    }
+});
+window.addEventListener("resize", (e)=>{
+    table_rect = table.getBoundingClientRect();
+    for (let i=0; i<len; i++){
+        for(let j=0; j<len; j++){
+            grid.getPieces[i][j].put();
+        }
+    }
+});
