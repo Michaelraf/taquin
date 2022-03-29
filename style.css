@@ -1,6 +1,7 @@
 *{
     padding: 0;
     margin: 0;
+    box-sizing: border-box;
 }
 body{
     width: 100vw;
@@ -11,6 +12,8 @@ body{
 }
 .table{
     box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
+    border: inset #eaeaea 10px;
+    background-color: #bfbaba;
 }
 .row{
     display: flex;
@@ -20,11 +23,15 @@ body{
     width: 100px;
     height: 100px;
     display: flex;
+    position: absolute;
     text-align: center;
     align-items: center;
     justify-content: center;
     border: 3px outset #b5a6a4;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
+}
+.empty{
+    border: none;
 }
 .piece:active{
     background-color: gray;
