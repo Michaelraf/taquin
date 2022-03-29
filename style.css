@@ -10,7 +10,7 @@ body{
     align-items: center;
 }
 .table{
-    azimuth: none; /* fake property */
+    box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.75);
 }
 .row{
     display: flex;
@@ -19,11 +19,12 @@ body{
 .piece{
     width: 100px;
     height: 100px;
-    border: 1px solid black;
     display: flex;
     text-align: center;
     align-items: center;
     justify-content: center;
+    border: 3px outset #b5a6a4;
+    transition: background-color 0.2s;
 }
 .piece:active{
     background-color: gray;
