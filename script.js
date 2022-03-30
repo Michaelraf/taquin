@@ -3,11 +3,14 @@
  */
 const len = 2;
 let table = document.querySelector('.table');
+let solveBtn = document.querySelector('#solve');
+let shuffleBtn = document.querySelector('#shuffle');
 table.style.width = 100*len + 20 +"px";
 table.style.height = 100*len + 20 + "px";
 table_rect = table.getBoundingClientRect();
 let nodes = []; // The nodes when solving
 let moveList = []; // The list of the moves to the solution
+let iter = 0; // Number of iterations during solving
 
 class Piece {
     constructor(number, posX, posY) {
@@ -255,7 +258,7 @@ window.addEventListener("keydown",(e)=>{
         grid.move('L');
     }
     else if (e.key == 's' || e.key == 'S'){
-        grid.shuffle(100);
+        grid.shuffle(Math.floor(Math.exp(len)));
     }
     else if (e.key == 'r' || e.key == 'R'){
         // Creating the target state
@@ -270,8 +273,12 @@ window.addEventListener("keydown",(e)=>{
                 target[i][j] = ""
             };
         }
+        iter = 0;
+        nodes = [];
+        moveList = [];
         state = ["", currentState()];
         solve(state, target);
+        // console.log(moveList);
     }
 })
 window.addEventListener('click', (e)=>{
@@ -286,6 +293,30 @@ window.addEventListener("resize", (e)=>{
             grid.getPieces[i][j].put();
         }
     }
+});
+shuffleBtn.addEventListener('click', (e)=>{
+    grid.shuffle((Math.floor(Math.exp(len))));
+});
+solveBtn.addEventListener('click', (e)=>{
+    // Creating the target state
+    let target = [];
+    let number = 1;
+    for (let i=0; i<len; i++){
+        target[i] = []
+        for (let j=0; j<len; j++){
+            target[i][j] = number;
+            number++;
+            if (i==len-1 & j==len-1)
+            target[i][j] = ""
+        };
+    }
+    iter = 0;
+    nodes = [];
+    moveList = [];
+    state = ["", currentState()];
+    solve(state, target);
+    // console.log(moveList);
+    putSolved();
 });
 function checkRange(i, j){
     if(i<0 || j<0 || i >= len || j >= len)
@@ -377,18 +408,16 @@ function contains(nodes, state){
     }
     return false;
 }
-let i = 0;
 function solve(state, target){
-    console.log(target)
     let newState = JSON.stringify(state);
     newState = JSON.parse(newState);
     let newTarget = JSON.stringify(target);
     newTarget = JSON.parse(newTarget);
-    i++;
-    console.log(i);
-    console.log(moveList); 
+    iter ++;
+    // console.log(iter);
+    // console.log(moveList);
     if(contains(nodes, newState[1])){ 
-        i--;
+        // iter--;
         return false;
     }
     nodes.push(newState[1]);
@@ -396,12 +425,23 @@ function solve(state, target){
     if (equalArr(newState[1], newTarget)){
         return true;
     }
-    for (child of adjacents(newState[1])){
+    let children = adjacents(newState[1]);
+    for (child of children){
         if (solve(child, newTarget)){
             return true; 
         }
     }
     moveList.pop();
-    i--;
+    // iter--;
     return false;
+}
+function putSolved(){
+    let i = 1;
+    let id = window.setInterval(()=>{
+        grid.move(moveList[i]);
+        i++;
+        if(i >= moveList.length){
+            window.clearInterval(id);
+        }
+    }, 150);
 }

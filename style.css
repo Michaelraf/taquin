@@ -7,6 +7,7 @@ body{
     width: 100vw;
     height: 100vh;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
 }
@@ -35,4 +36,20 @@ body{
 }
 .piece:active{
     background-color: gray;
+}
+.buttons-container{
+    margin-top: 30px;
+}
+.buttons-container button{
+    margin: 0 5px;
+    padding: 11px;
+    background-color: #3039bf;
+    border-radius: 25px;
+    color: white;
+    border: 3px #cec8c8 outset;
+    font-family: 'Arial';
+}
+.buttons-container button:active{
+    border: 3px #cec8c8 inset;
+    background-color: #3d45bd;
 }
