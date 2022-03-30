@@ -1,11 +1,13 @@
 /**
  * @author RAFALIMANANA Michaël
  */
-const len = 4;
+const len = 2;
 let table = document.querySelector('.table');
 table.style.width = 100*len + 20 +"px";
 table.style.height = 100*len + 20 + "px";
 table_rect = table.getBoundingClientRect();
+let nodes = []; // The nodes when solving
+let moveList = []; // The list of the moves to the solution
 
 class Piece {
     constructor(number, posX, posY) {
@@ -89,25 +91,25 @@ class Grid {
         }
         if(this.pieces[x][y].getNumber != ""){
             // verifier si le vide est en haut
-            if (this.checkRange(x-1, y)){
+            if (checkRange(x-1, y)){
                 if (this.pieces[x-1][y].getNumber == ""){
                     this.permute(this.pieces[x][y], this.pieces[x-1][y])
                 }
             }
             // verifier si le vide est en bas
-            if (this.checkRange(x+1, y)){
+            if (checkRange(x+1, y)){
                 if (this.pieces[x+1][y].getNumber == ""){
                     this.permute(this.pieces[x][y], this.pieces[x+1][y])
                 }
             }
             // verifier si le vide est à gauche
-            if (this.checkRange(x, y-1)){
+            if (checkRange(x, y-1)){
                 if (this.pieces[x][y-1].getNumber == ""){
                     this.permute(this.pieces[x][y], this.pieces[x][y-1])
                 }
             }
             // verifier si le vide est à droite
-            if (this.checkRange(x, y+1)){
+            if (checkRange(x, y+1)){
                 if (this.pieces[x][y+1].getNumber == ""){
                     this.permute(this.pieces[x][y], this.pieces[x][y+1])
                 }
@@ -141,26 +143,23 @@ class Grid {
         this.pieces[x1][y1].put();
         this.pieces[x2][y2].put();
     }
-    checkRange(i, j){
-        if(i<0 || j<0 || i >= len || j >= len)
-            return false;
-        return true;
-    }
     move(direction){
         let ind = {};
         let ind1 = {};
+        ext:
         for (let i=0; i<len; i++){
             for (let j=0; j<len; j++){
                 if (this.pieces[i][j].getNumber == ""){
                     ind["x"] = i;
                     ind["y"] = j;
+                    break ext;
                 }
             }
         }
         if(direction == 'U'){
             ind1["x"] = ind.x+1;
             ind1["y"] = ind.y;
-            if(this.checkRange(ind1.x, ind1.y)){
+            if(checkRange(ind1.x, ind1.y)){
                 this.permute(this.pieces[ind.x][ind.y],this.pieces[ind1.x][ind1.y]);
             }
             else{
@@ -170,7 +169,7 @@ class Grid {
         else if(direction == 'D'){
             ind1["x"] = ind.x-1;
             ind1["y"] = ind.y;
-            if(this.checkRange(ind1.x, ind1.y)){
+            if(checkRange(ind1.x, ind1.y)){
                 this.permute(this.pieces[ind.x][ind.y],this.pieces[ind1.x][ind1.y]);
             }
             else{
@@ -180,7 +179,7 @@ class Grid {
         else if(direction == 'R'){
             ind1["x"] = ind.x;
             ind1["y"] = ind.y-1;
-            if(this.checkRange(ind1.x, ind1.y)){
+            if(checkRange(ind1.x, ind1.y)){
                 this.permute(this.pieces[ind.x][ind.y],this.pieces[ind1.x][ind1.y]);
             }
             else{
@@ -190,7 +189,7 @@ class Grid {
         else if(direction == 'L'){
             ind1["x"] = ind.x;
             ind1["y"] = ind.y+1;
-            if(this.checkRange(ind1.x, ind1.y)){
+            if(checkRange(ind1.x, ind1.y)){
                 this.permute(this.pieces[ind.x][ind.y],this.pieces[ind1.x][ind1.y]);
             }
             else{
@@ -258,6 +257,22 @@ window.addEventListener("keydown",(e)=>{
     else if (e.key == 's' || e.key == 'S'){
         grid.shuffle(100);
     }
+    else if (e.key == 'r' || e.key == 'R'){
+        // Creating the target state
+        let target = [];
+        let number = 1;
+        for (let i=0; i<len; i++){
+            target[i] = []
+            for (let j=0; j<len; j++){
+                target[i][j] = number;
+                number++;
+                if (i==len-1 & j==len-1)
+                target[i][j] = ""
+            };
+        }
+        state = ["", currentState()];
+        solve(state, target);
+    }
 })
 window.addEventListener('click', (e)=>{
     if (e.target.classList.contains("piece")){
@@ -272,3 +287,121 @@ window.addEventListener("resize", (e)=>{
         }
     }
 });
+function checkRange(i, j){
+    if(i<0 || j<0 || i >= len || j >= len)
+        return false;
+    return true;
+}
+function adjacents(state){
+    let possibleMoves = [];
+    let states = [];
+
+    // Find the index of the empty case
+    let x = -1, y = -1;
+    ext:
+    for (let i=0; i<len; i++){
+        for(let j=0; j<len; j++){
+            if(state[i][j] == ""){
+                x = i;
+                y = j;
+                break ext;
+            }
+        }
+    }
+    // Create the list of possible moves
+    /// Check for UP
+    if (checkRange(x+1, y))
+        possibleMoves.push("U");
+    /// Check for DOWN
+    if (checkRange(x-1, y))
+    possibleMoves.push("D");
+    /// Check for RIGHT
+    if (checkRange(x, y-1))
+        possibleMoves.push("R");
+    /// Check for LEFT
+    if (checkRange(x, y+1))
+        possibleMoves.push("L");
+    for (move of possibleMoves){
+        let newState = JSON.stringify(state);
+        newState = JSON.parse(newState);
+        if (move == 'U'){
+            // Permute empty and the element below it
+            [newState[x][y], newState[x+1][y]] = [newState[x+1][y], newState[x][y]];
+            states.push(['U',newState]);
+        }
+        else if(move == "D"){
+            // Permute empty and the element above it
+            [newState[x][y], newState[x-1][y]] = [newState[x-1][y], newState[x][y]];
+            states.push(['D',newState]);
+        }
+        else if(move == "R"){
+            // Permute empty and the element at it's left side
+            [newState[x][y], newState[x][y-1]] = [newState[x][y-1], newState[x][y]];
+            states.push(['R',newState]);
+        }
+        else if(move == "L"){
+            // Permute empty and the element at it's right side
+            [newState[x][y], newState[x][y+1]] = [newState[x][y+1], newState[x][y]];
+            states.push(['L',newState]);
+        }
+    }
+    return states;
+}
+function currentState(){
+    let state = [];
+    for (let i=0; i<len; i++){
+        state[i] = [];
+        for(let j=0; j<len; j++){
+            state[i][j] = grid.getPieces[i][j].getNumber;
+        }
+    }
+    return state;
+}
+function equalArr(arr1, arr2){
+    if (arr1.length != arr2.length)
+        return false;
+    else {
+        for (let i=0; i<arr1.length; i++){
+            for (let j=0; j<arr1[i].length; j++){
+                if (arr1[i][j] != arr2[i][j])
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+function contains(nodes, state){
+    for (let i=0; i<nodes.length; i++){
+        if(equalArr(nodes[i], state))
+            return true;
+    }
+    return false;
+}
+let i = 0;
+function solve(state, target){
+    console.log(target)
+    let newState = JSON.stringify(state);
+    newState = JSON.parse(newState);
+    let newTarget = JSON.stringify(target);
+    newTarget = JSON.parse(newTarget);
+    i++;
+    console.log(i);
+    console.log(moveList); 
+    if(contains(nodes, newState[1])){ 
+        i--;
+        return false;
+    }
+    nodes.push(newState[1]);
+    moveList.push(newState[0]);
+    if (equalArr(newState[1], newTarget)){
+        return true;
+    }
+    for (child of adjacents(newState[1])){
+        if (solve(child, newTarget)){
+            return true; 
+        }
+    }
+    moveList.pop();
+    i--;
+    return false;
+}
