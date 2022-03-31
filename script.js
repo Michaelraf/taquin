@@ -1,7 +1,7 @@
 /**
  * @author RAFALIMANANA Michaël
  */
-const len = 2;
+const len = 3;
 let table = document.querySelector('.table');
 let solveBtn = document.querySelector('#solve');
 let shuffleBtn = document.querySelector('#shuffle');
@@ -10,7 +10,6 @@ table.style.height = 100*len + 20 + "px";
 table_rect = table.getBoundingClientRect();
 let nodes = []; // The nodes when solving
 let moveList = []; // The list of the moves to the solution
-let iter = 0; // Number of iterations during solving
 
 class Piece {
     constructor(number, posX, posY) {
@@ -258,7 +257,8 @@ window.addEventListener("keydown",(e)=>{
         grid.move('L');
     }
     else if (e.key == 's' || e.key == 'S'){
-        grid.shuffle(Math.floor(Math.exp(len)));
+        // grid.shuffle(Math.floor(Math.exp(len)));
+        grid.shuffle(100);
     }
     else if (e.key == 'r' || e.key == 'R'){
         // Creating the target state
@@ -273,12 +273,10 @@ window.addEventListener("keydown",(e)=>{
                 target[i][j] = ""
             };
         }
-        iter = 0;
         nodes = [];
         moveList = [];
         state = ["", currentState()];
-        solve(state, target);
-        // console.log(moveList);
+        solve(state, target, 0);
     }
 })
 window.addEventListener('click', (e)=>{
@@ -295,7 +293,8 @@ window.addEventListener("resize", (e)=>{
     }
 });
 shuffleBtn.addEventListener('click', (e)=>{
-    grid.shuffle((Math.floor(Math.exp(len))));
+    // grid.shuffle((Math.floor(Math.exp(len))));
+    grid.shuffle(100);
 });
 solveBtn.addEventListener('click', (e)=>{
     // Creating the target state
@@ -314,10 +313,49 @@ solveBtn.addEventListener('click', (e)=>{
     nodes = [];
     moveList = [];
     state = ["", currentState()];
-    solve(state, target);
-    // console.log(moveList);
+    solve(state, target, 0);
+    console.log(moveList);
     putSolved();
 });
+function indMin(arr){
+    // getting an 1D array in the parameter and return the indice of the minimum elt
+    let ind = 0;
+    for (let i=1; i<arr.length; i++){
+        if (arr[i]<arr[i-1])
+            ind = i;
+    }
+    return ind;
+}
+function hamming(state, target){
+    // getting two len x len dimension arrays and return the hamming distance between them
+    let sum = 0;
+    for (let i=0; i<len; i++){
+        for (let j=0; j<len; j++){
+            if(state[i][j]!="" & state[i][j] != target[i][j]){
+                sum++;
+            }
+        }
+    }
+    return sum;
+}
+function manhattan(state, target){
+    // getting two len x len dimension arrays and return the manhattan distance between them
+    let sum = 0;
+    for (let i=0; i<len; i++){ // 
+        for (let j=0; j<len; j++){
+            for (let p=0; p<len; p++){ // Browse along the column p
+                if(state[i][j] == "");
+                else{
+                    let ind = target[p].indexOf(state[i][j]);
+                    if(ind != -1){
+                        sum += Math.abs(i-p) + Math.abs(j-ind);
+                    }
+                }
+            }
+        }
+    }
+    return sum;
+}
 function checkRange(i, j){
     if(i<0 || j<0 || i >= len || j >= len)
         return false;
@@ -408,35 +446,43 @@ function contains(nodes, state){
     }
     return false;
 }
-function solve(state, target){
+function solve(state, target, iter){
+/*     if (iter == 10){
+        return false;
+    } */
+    console.log(iter);
     let newState = JSON.stringify(state);
     newState = JSON.parse(newState);
     let newTarget = JSON.stringify(target);
-    newTarget = JSON.parse(newTarget);
-    iter ++;
-    // console.log(iter);
-    // console.log(moveList);
+    newTarget = JSON.parse(newTarget); 
     if(contains(nodes, newState[1])){ 
-        // iter--;
         return false;
     }
     nodes.push(newState[1]);
-    moveList.push(newState[0]);
     if (equalArr(newState[1], newTarget)){
         return true;
     }
     let children = adjacents(newState[1]);
-    for (child of children){
-        if (solve(child, newTarget)){
+    let h = [];
+    for (let i=0; i<children.length; i++){
+        h.push(manhattan(children[i][1], newTarget) + 3*hamming(children[i][1], newTarget));
+/*         if(hamming(newState[1], newTarget))
+        if (solve(children[i], newTarget, iter+1)){
+            moveList.push(children[i][0]);
             return true; 
-        }
+        } */
     }
-    moveList.pop();
-    // iter--;
+    if (solve(children[indMin(h)], newTarget, iter+1)){
+        // Searching the indice with the minimum heuristic
+        moveList.push(children[indMin(h)][0]);
+        return true;
+    }
+
     return false;
 }
 function putSolved(){
-    let i = 1;
+    moveList = moveList.reverse();
+    let i = 0;
     let id = window.setInterval(()=>{
         grid.move(moveList[i]);
         i++;
@@ -444,4 +490,4 @@ function putSolved(){
             window.clearInterval(id);
         }
     }, 150);
-}
+} 
