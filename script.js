@@ -309,7 +309,7 @@ solveBtn.addEventListener('click', (e)=>{
             target[i][j] = ""
         };
     }
-    iter = 0;
+    depth = 0;
     nodes = [];
     moveList = [];
     state = ["", currentState()];
@@ -326,7 +326,17 @@ function indMin(arr){
     }
     return ind;
 }
-function hamming(state, target){
+function sortIndex(arr){
+    // get 1D array, sort and return the 1D of indexes
+    let arr1 = [...arr];
+    arr1.sort();
+    let index = [];
+    for (let i=0; i<arr.length; i++){
+        index.push(arr.indexOf(arr1[i]));
+    }
+    return index;
+}
+function hamming(state, target){5
     // getting two len x len dimension arrays and return the hamming distance between them
     let sum = 0;
     for (let i=0; i<len; i++){
@@ -446,15 +456,17 @@ function contains(nodes, state){
     }
     return false;
 }
-function solve(state, target, iter){
-/*     if (iter == 10){
+function solve(state, target, depth){
+    if (depth == 50){
         return false;
-    } */
-    console.log(iter);
+    }
+    console.log(depth);
     let newState = JSON.stringify(state);
     newState = JSON.parse(newState);
     let newTarget = JSON.stringify(target);
     newTarget = JSON.parse(newTarget); 
+    console.log(newState[0]);
+    console.table(newState[1]);
     if(contains(nodes, newState[1])){ 
         return false;
     }
@@ -466,18 +478,15 @@ function solve(state, target, iter){
     let h = [];
     for (let i=0; i<children.length; i++){
         h.push(manhattan(children[i][1], newTarget) + 3*hamming(children[i][1], newTarget));
-/*         if(hamming(newState[1], newTarget))
-        if (solve(children[i], newTarget, iter+1)){
-            moveList.push(children[i][0]);
-            return true; 
-        } */
     }
-    if (solve(children[indMin(h)], newTarget, iter+1)){
-        // Searching the indice with the minimum heuristic
-        moveList.push(children[indMin(h)][0]);
-        return true;
+    h = sortIndex(h);
+    for (let i=0; i<h.length; i++){
+        if (solve(children[h[i]], newTarget, depth+1)){
+            
+            moveList.push(children[h[i]][0]);
+            return true;
+        }
     }
-
     return false;
 }
 function putSolved(){
