@@ -1,11 +1,14 @@
 /**
  * @author RAFALIMANANA Michaël
  */
-const len = 4;
+const len = 3;
 let table = document.querySelector('.table');
+let solveBtn = document.querySelector('#solve');
+let shuffleBtn = document.querySelector('#shuffle');
 table.style.width = 100*len + 20 +"px";
 table.style.height = 100*len + 20 + "px";
 table_rect = table.getBoundingClientRect();
+let moveList = [];
 
 class Piece {
     constructor(number, posX, posY) {
@@ -89,25 +92,25 @@ class Grid {
         }
         if(this.pieces[x][y].getNumber != ""){
             // verifier si le vide est en haut
-            if (this.checkRange(x-1, y)){
+            if (checkRange(x-1, y)){
                 if (this.pieces[x-1][y].getNumber == ""){
                     this.permute(this.pieces[x][y], this.pieces[x-1][y])
                 }
             }
             // verifier si le vide est en bas
-            if (this.checkRange(x+1, y)){
+            if (checkRange(x+1, y)){
                 if (this.pieces[x+1][y].getNumber == ""){
                     this.permute(this.pieces[x][y], this.pieces[x+1][y])
                 }
             }
             // verifier si le vide est à gauche
-            if (this.checkRange(x, y-1)){
+            if (checkRange(x, y-1)){
                 if (this.pieces[x][y-1].getNumber == ""){
                     this.permute(this.pieces[x][y], this.pieces[x][y-1])
                 }
             }
             // verifier si le vide est à droite
-            if (this.checkRange(x, y+1)){
+            if (checkRange(x, y+1)){
                 if (this.pieces[x][y+1].getNumber == ""){
                     this.permute(this.pieces[x][y], this.pieces[x][y+1])
                 }
@@ -141,26 +144,23 @@ class Grid {
         this.pieces[x1][y1].put();
         this.pieces[x2][y2].put();
     }
-    checkRange(i, j){
-        if(i<0 || j<0 || i >= len || j >= len)
-            return false;
-        return true;
-    }
     move(direction){
         let ind = {};
         let ind1 = {};
+        ext:
         for (let i=0; i<len; i++){
             for (let j=0; j<len; j++){
                 if (this.pieces[i][j].getNumber == ""){
                     ind["x"] = i;
                     ind["y"] = j;
+                    break ext;
                 }
             }
         }
         if(direction == 'U'){
             ind1["x"] = ind.x+1;
             ind1["y"] = ind.y;
-            if(this.checkRange(ind1.x, ind1.y)){
+            if(checkRange(ind1.x, ind1.y)){
                 this.permute(this.pieces[ind.x][ind.y],this.pieces[ind1.x][ind1.y]);
             }
             else{
@@ -170,7 +170,7 @@ class Grid {
         else if(direction == 'D'){
             ind1["x"] = ind.x-1;
             ind1["y"] = ind.y;
-            if(this.checkRange(ind1.x, ind1.y)){
+            if(checkRange(ind1.x, ind1.y)){
                 this.permute(this.pieces[ind.x][ind.y],this.pieces[ind1.x][ind1.y]);
             }
             else{
@@ -180,7 +180,7 @@ class Grid {
         else if(direction == 'R'){
             ind1["x"] = ind.x;
             ind1["y"] = ind.y-1;
-            if(this.checkRange(ind1.x, ind1.y)){
+            if(checkRange(ind1.x, ind1.y)){
                 this.permute(this.pieces[ind.x][ind.y],this.pieces[ind1.x][ind1.y]);
             }
             else{
@@ -190,7 +190,7 @@ class Grid {
         else if(direction == 'L'){
             ind1["x"] = ind.x;
             ind1["y"] = ind.y+1;
-            if(this.checkRange(ind1.x, ind1.y)){
+            if(checkRange(ind1.x, ind1.y)){
                 this.permute(this.pieces[ind.x][ind.y],this.pieces[ind1.x][ind1.y]);
             }
             else{
@@ -256,7 +256,38 @@ window.addEventListener("keydown",(e)=>{
         grid.move('L');
     }
     else if (e.key == 's' || e.key == 'S'){
+        // grid.shuffle(Math.floor(Math.exp(len)));
         grid.shuffle(100);
+    }
+    else if (e.key == 'r' || e.key == 'R'){
+        // Creating the target state
+        let target = [];
+        let number = 1;
+        for (let i=0; i<len; i++){
+            target[i] = []
+            for (let j=0; j<len; j++){
+                target[i][j] = number;
+                number++;
+                if (i==len-1 & j==len-1)
+                target[i][j] = ""
+            };
+        }
+        nodes = [];
+        moveList = [];
+        state = ["", currentState()];
+        const rawResponse = await fetch('/', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+            })
+
+        });
+        const content = await rawResponse.json();
+        
+        /* solve(state, target, 0); */
     }
 })
 window.addEventListener('click', (e)=>{
@@ -272,3 +303,55 @@ window.addEventListener("resize", (e)=>{
         }
     }
 });
+shuffleBtn.addEventListener('click', (e)=>{
+    // grid.shuffle((Math.floor(Math.exp(len))));
+    grid.shuffle(100);
+});
+solveBtn.addEventListener('click', (e)=>{
+    // Creating the target state
+    let target = [];
+    let number = 1;
+    for (let i=0; i<len; i++){
+        target[i] = []
+        for (let j=0; j<len; j++){
+            target[i][j] = number;
+            number++;
+            if (i==len-1 & j==len-1)
+            target[i][j] = ""
+        };
+    }
+    depth = 0;
+    nodes = [];
+    moveList = [];
+    state = ["", currentState()];
+    solve(state, target, 0);
+    console.log(moveList);
+    putSolved();
+});
+
+function checkRange(i, j){
+    if(i<0 || j<0 || i >= len || j >= len)
+        return false;
+    return true;
+}
+function currentState(){
+    let state = [];
+    for (let i=0; i<len; i++){
+        state[i] = [];
+        for(let j=0; j<len; j++){
+            state[i][j] = grid.getPieces[i][j].getNumber;
+        }
+    }
+    return state;
+}
+function putSolved(){
+    moveList = moveList.reverse();
+    let i = 0;
+    let id = window.setInterval(()=>{
+        grid.move(moveList[i]);
+        i++;
+        if(i >= moveList.length){
+            window.clearInterval(id);
+        }
+    }, 150);
+} 
