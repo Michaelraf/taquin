@@ -1,6 +1,10 @@
 // Global variables
 let nodes = []; //  List of nodes already appeared when solving
 let moveList = []; // The list of moves to the solution
+let len = 3; // Default value for len
+let depth = 0;
+let state = [];
+let target = [];
 
 // Useful functions
 function indMin(arr){
@@ -15,15 +19,36 @@ function indMin(arr){
 function sortIndex(arr){
     // get 1D array, sort and return the 1D of indexes
     let arr1 = [...arr];
-    arr1.sort();
     let index = [];
-    for (let i=0; i<arr.length; i++){
-        index.push(arr.indexOf(arr1[i]));
+    for (let i=0; i<arr1.length; i++){
+        arr1[i] = [arr1[i], i];
+    }
+    arr1.sort((a, b)=>{
+        return a[0] < b[0] ? -1 : 1;
+    });
+    for (let j=0; j<arr1.length; j++){
+        index.push(arr1[j][1]);
     }
     return index;
 }
-function hamming(state, target){5
-    // getting two len x len dimension arrays and return the hamming distance between them
+function indexOf(arr1, arr2){
+    let k = 0;
+    // get two 2D arrays as parameter and return the indice of arr1 in arr2
+    for(let index=0; index<arr2.length; index++){
+        for (let i=0; i<arr2[index].length; i++){
+            for(let j=0; j<arr2[index][i].length; i++){
+                if (arr1[index][i][j] == arr2[i][j]){
+                    if(k == arr2.length-1)
+                        return index;
+                    k++;    
+                }
+            }
+        }
+    }
+    return false;
+}
+function hamming(state, target){
+    // get two len x len dimension arrays and return the hamming distance between them
     let sum = 0;
     for (let i=0; i<len; i++){
         for (let j=0; j<len; j++){
@@ -51,6 +76,11 @@ function manhattan(state, target){
         }
     }
     return sum;
+}
+function checkRange(i, j){
+    if(i<0 || j<0 || i >= len || j >= len)
+        return false;
+    return true;
 }
 function adjacents(state){
     // get a state and return array of its adjacents states
@@ -107,4 +137,96 @@ function adjacents(state){
         }
     }
     return states;
+}
+function equalArr(arr1, arr2){
+    if (arr1.length != arr2.length)
+        return false;
+    else {
+        for (let i=0; i<arr1.length; i++){
+            for (let j=0; j<arr1[i].length; j++){
+                if (arr1[i][j] != arr2[i][j])
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+function contains(nodes, state){
+    for (let i=0; i<nodes.length; i++){
+        if(equalArr(nodes[i], state))
+            return true;
+    }
+    return false;
+}
+function solve(state, target, depth){
+
+/*     if (depth > 20){
+        return {"success": false, "reason": "depth"};
+    } */
+    // console.log(depth);
+    let newState = JSON.stringify(state);
+    newState = JSON.parse(newState);
+    let newTarget = JSON.stringify(target);
+    newTarget = JSON.parse(newTarget); 
+    // console.log(newState[0]);
+    // console.table(newState[1]);
+    if(contains(nodes, newState[1])){
+        // console.log("inside nodes")
+        return {"success": false, "reason": "node"};
+    }
+    nodes.push(newState[1]);
+    if (equalArr(newState[1], newTarget)){
+        return {"success": true};
+    }
+    let children = adjacents(newState[1]);
+    let h = [];
+    for (let i=0; i<children.length; i++){
+        h.push(manhattan(children[i][1], newTarget) + len*hamming(children[i][1], newTarget));
+    }
+    h = sortIndex(h);
+    // console.log(h);
+    for (let i=0; i<h.length; i++){
+        let solve_state = solve(children[h[i]], newTarget, depth+1)
+        if (solve_state.success){
+            moveList.push(children[h[i]][0]);
+            return {"success": true};
+        }
+        else if(solve_state.reason == "depth" & i==h.length-1){
+            nodes.pop();
+            // console.log("pop nodes");
+            return {"success": false, "reason": "depth"};
+        }
+
+    }
+    return {"success": false, "reason": "child"};
+}
+const solver = (req, res)=>{
+    len = req.body.len;
+    state = req.body.state;
+    target = req.body.target;
+/*     res.json({
+        message : 'resolving'
+    }); */
+/*     return new Promise((resolve, reject)=>{
+        solve(state, target);
+    }) */
+    moveList = [];
+    depth = 0;
+    nodes = [];
+    if(solve(state, target, depth).success){
+        // console.log(moveList);
+        res.json({
+            solved : true,
+            moveList
+        })
+    }
+    else{
+        console.log("Not solved");
+        res.json({
+            solved : false
+        })
+    }
+}
+module.exports = {
+    solver
 }
