@@ -9,6 +9,7 @@ table.style.width = 100 * len + 20 + "px";
 table.style.height = 100 * len + 20 + "px";
 table_rect = table.getBoundingClientRect();
 let moveList = [];
+const iteration = 20;
 
 class Piece {
     constructor(number, posX, posY) {
@@ -257,7 +258,7 @@ window.addEventListener("keydown", (e) => {
     }
     else if (e.key == 's' || e.key == 'S') {
         // grid.shuffle(Math.floor(Math.exp(len)));
-        grid.shuffle(20*len);
+        grid.shuffle(iteration);
     }
     else if (e.key == 'r' || e.key == 'R') {
         const content = getSolvedList();
@@ -279,7 +280,7 @@ window.addEventListener("resize", (e) => {
 });
 shuffleBtn.addEventListener('click', (e) => {
     // grid.shuffle((Math.floor(Math.exp(len))));
-    grid.shuffle(20*len);
+    grid.shuffle(iteration);
 });
 solveBtn.addEventListener('click', (e) => {
     let content = getSolvedList();
@@ -300,7 +301,7 @@ function currentState() {
     return state;
 }
 function putSolved() {
-    moveList = moveList.reverse();
+    // moveList = moveList.reverse();
     let i = 0;
     let id = window.setInterval(() => {
         grid.move(moveList[i]);
@@ -327,8 +328,8 @@ function getSolvedList() {
     moveList = [];
     state = ["", currentState()];
     (async () => {
-
-        const rawResponse = await fetch('../', {
+        document.title = "Taquin Solving...";
+	const rawResponse = await fetch('../', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
@@ -344,5 +345,6 @@ function getSolvedList() {
         console.log(content);
         moveList = content.moveList;
         putSolved();
+        document.title = "Taquin"
     })();
 }

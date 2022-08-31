@@ -3,7 +3,7 @@ const express = require("express");
 const app = express();
 const cors = require('cors');
 const server = http.createServer(app);
-const port = 3000;
+const port = 1337;
 const router = require('express').Router();
 const solve = require('./game/solve')
 
